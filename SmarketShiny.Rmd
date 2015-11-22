@@ -1,0 +1,129 @@
+---
+title: "Creating Shiny Apps for Stock Prediction"
+author: "Hum N. Bhandari"
+date: "11/21/2015"
+output: html_document
+---
+
+###**Loading Data** 
+We use Smarket data set from ISLR pacakge available in CRAN
+
+```{r,cache=TRUE}
+library(ISLR)
+data(Smarket)
+head(Smarket)
+```
+
+###**Creating Model**
+Now,we use linear regression prediction model to predict the Today's precentage return from stocks 
+Now lets fit linear regresion model to predict Today's stocks by using 5 days records 
+Lag1, Lag2, Lag3, Lag4, and Lag5 
+
+```{r,}
+fit<-lm(Today~Lag1+Lag2+Lag3+Lag4+Lag5, data = Smarket)
+summary(fit)
+```
+
+###**Predicting today's stock**
+
+```{r,cache=TRUE}
+predict(fit,newdata=data.frame(Lag1 = 0.1,Lag2 = 0.1,Lag3 = 0.1,Lag4 = 0.1, Lag5 = 0.1) )
+```
+
+
+
+##**Creating Shiny Apps**
+
+**ui.R file**
+
+```{r,eval=FALSE}
+
+library(shiny)
+library(ISLR)
+
+shinyUI(
+  
+  pageWithSidebar(
+    
+    headerPanel("Predicting percentage returns from stocks"),
+    
+    sidebarPanel(
+      
+      numericInput('Lag1','Enter percentage returns 1 day before', 0.1 , min = -5, max = 5, step =.05),
+      #submitButton('Submit'),
+     
+      numericInput('Lag2', 'Enter percentage returns 2 days before', 0.1 , min = -5, max = 5, step =.05),
+     # submitButton('Submit'),
+      numericInput('Lag3', 'Enter percentage returns 3 days before', 0.1 , min = -5, max = 5, step =.05),
+     # submitButton('Submit'),
+      numericInput('Lag4', 'Enter percentage returns 4 days before', 0.1 , min = -5, max = 5, step =.05),
+     # submitButton('Submit'),
+      numericInput('Lag5', 'Enter percentage returns 5 days before', 0.1 , min = -5, max = 5, step =.05),
+      submitButton('Submit')
+    ),
+    
+    mainPanel(
+      h3('Results of the prediction'),
+      p('This apps use  last five days percentage return records to predict today\'s stok returns
+        using  linear regression model'),
+     
+      h4('Today\'s  percentage returns prediction from stocks is'),
+      verbatimTextOutput("prediction"),
+      
+     h4('How to use this Apps??'),
+     p('1.Enter values of last five day\'s return from stocks in five boxes'),
+     p('2.Press the Submit button to get prediction'),
+     p('3.Default value for each day\'s return is 0.1 '),
+     p('4.You can increase or decrease the values for each last day by 0.05 between -5 to 5')
+    )
+  )
+)
+
+```
+
+**server.R file**
+
+```{r,eval=FALSE}
+library(shiny)
+library(ISLR)
+data(Smarket)
+suppressPackageStartupMessages(library(googleVis))
+fit<-lm(Today~Lag1+Lag2+Lag3+Lag4+Lag5,data = Smarket)
+shinyServer(
+  function(input, output) {
+    output$Lag1 <- renderPrint({input$Lag1})
+    output$Lag2 <- renderPrint({input$Lag2})
+    output$Lag3 <- renderPrint({input$Lag3})
+    output$Lag4 <- renderPrint({input$Lag4})
+    output$Lag5 <- renderPrint({input$Lag5})
+    
+    newdata <- reactive(data.frame(Lag1 = input$Lag1,Lag2 = input$Lag2, 
+                        Lag3  = input$Lag3,Lag4 = input$Lag4,
+                        Lag5  = input$Lag5))
+    
+    output$prediction <- renderText({predict(fit,newdata = newdata())})
+  }
+)
+
+
+```
+
+## How to get prediction ??
+
+- Go to my apps [here](https://humnath5.shinyapps.io/DataProduct)
+- Enter 5 enteries corresponding to Lag1,....,Lag5
+- Default values for these entris is 0.1 and you can enter value between -10 to 10 in the interval of 0.25
+- Press Submit button to see prediction
+
+
+
+
+###**References**
+
+- [Data Science Specialization](https://www.coursera.org/specializations/jhudatascience) Course conducted by Coursera and John Hopkins University
+- [Introduction to Statistical Learning](http://www-bcf.usc.edu/~gareth/ISL/index.html)
+by [Rob Tibshirani ](http://www-stat.stanford.edu/~tibs/) ,[TREVOR HASTIE](http://web.stanford.edu/~hastie/) and others
+
+- Tutorial in [Shiny Apps](http://shiny.rstudio.com)
+
+
